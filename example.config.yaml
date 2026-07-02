@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  commands — sync configuration (TEMPLATE)
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#  Copy this file to `config.yaml` (which is gitignored / machine-local) and edit
+#  it there:
+#
+#      cp example.config.yaml config.yaml
+#
+#  `config.yaml` is the single source of truth for:
+#    - which tools ("providers") this repo renders commands into, and how to
+#      install/uninstall them (frontmatter shape, arg-token, symlink mode)
+#    - which commands exist, and which provider(s) each one targets
+#
+#  Run `/sync` (or `node scripts/sync.mjs`) after editing this file. If no
+#  config.yaml exists yet, the sync engine falls back to this template.
+#
+#  Commands themselves are NOT edited here — they live as provider-agnostic
+#  Markdown in `source/<UPPER-NAME>.md`. `/sync` renders each into
+#  `providers/<provider>/<name><ext>` using the settings below.
+#
+#  Mark a command `ignore: true` to keep it rendering/installing locally while
+#  keeping it out of git — its output lands in `source/ignored/<NAME>.md` and
+#  `providers/<provider>/ignored/<name><ext>` instead of the top level, and
+#  `/sync` keeps a static `.gitignore` pattern in sync for each configured
+#  provider. Useful for personal or company-specific commands you don't want
+#  to commit alongside an otherwise shareable repo.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Where each provider's rendered commands get installed (symlinked). ~ expands
+# to $HOME. Override per machine/OS/VS Code edition as needed.
+install:
+  claude-code: ~/.claude/commands
+  copilot: ~/.config/Code/User/prompts
+
+# Add a new tool (OpenCode, etc.) here — no code changes needed, as long as it
+# can load commands from a symlinked directory or per-file symlinks and wants
+# simple key/value frontmatter.
+providers:
+  claude-code:
+    ext: ".md"                    # providers/claude-code/<name>.md
+    install-mode: dir             # the whole providers/claude-code/ dir is one symlink
+    args-token: "$ARGUMENTS"      # what {{ARGS}} becomes in source/*.md
+    frontmatter: [description, argument-hint]
+
+  copilot:
+    ext: ".prompt.md"             # providers/copilot/<name>.prompt.md
+    install-mode: files           # one symlink per command file
+    args-token: "${input:args}"
+    frontmatter: [name, description, agent, argument-hint]
+    fixed:
+      agent: agent
+
+commands:
+  commit:
+    targets: [claude-code, copilot]
+    description: "Commit staged and unstaged changes to the current branch using an Angular-style commit message that satisfies semantic-release conventions."
+    argument-hint: "Optional: branch name or commit scope"
+
+  sync:
+    targets: [claude-code, copilot]
+    description: "Regenerate every provider's commands from source/ per config.yaml, and rebuild install symlinks."
+    argument-hint: "[--check] [--prune]"
+
+  setup:
+    targets: [claude-code, copilot]
+    description: "Link this commands monorepo into place so its commands are available as slash commands."

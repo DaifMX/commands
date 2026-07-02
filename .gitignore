@@ -1,0 +1,13 @@
+# Your personal, machine-specific sync config. Copy example.config.yaml → config.yaml.
+config.yaml
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# ── begin ignored-command output (managed by scripts/sync.mjs) ──
+source/ignored/
+providers/claude-code/ignored/
+providers/copilot/ignored/
+# ── end ignored-command output ──
