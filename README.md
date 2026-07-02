@@ -39,13 +39,11 @@ commands/
 ├── claude-code/          # Claude Code commands  →  <name>.md
 │   ├── commit.md
 │   ├── setup.md
-│   ├── sync.md
-│   └── ticket.md · parse-ticket.md · ticket-refresh.md
+│   └── sync.md
 ├── copilot/              # GitHub Copilot prompts →  <name>.prompt.md
 │   ├── commit.prompt.md
 │   ├── setup.prompt.md
-│   ├── sync.prompt.md
-│   └── ticket.prompt.md · parse-ticket.prompt.md · ticket-refresh.prompt.md
+│   └── sync.prompt.md
 ├── scripts/
 │   └── sync.mjs          # zero-dependency Node sync engine
 ├── config.yaml           # source of truth: which command → which tool(s)
@@ -64,9 +62,6 @@ real, hand-editable command in that tool's own format.
 | [`/commit`](claude-code/commit.md) | ✅ | ✅ | Stage & commit with an Angular / semantic-release message. Offers to push. |
 | [`/sync`](claude-code/sync.md) | ✅ | ✅ | Reconcile both command sets per `config.yaml` and rebuild symlinks. |
 | [`/setup`](claude-code/setup.md) | ✅ | ✅ | Link this repo's commands into the tool. |
-| [`/ticket`](claude-code/ticket.md) | ✅ | ✅ | Create a Jira ticket + matching git branch. *(needs a Jira MCP)* |
-| [`/parse-ticket`](claude-code/parse-ticket.md) | ✅ | ✅ | Pull a Jira ticket into the repo as a Markdown work-file. *(needs a Jira MCP)* |
-| [`/ticket-refresh`](claude-code/ticket-refresh.md) | ✅ | ✅ | Update a Jira ticket to match what actually shipped. *(needs a Jira MCP)* |
 
 ---
 
@@ -88,7 +83,7 @@ commands:
   setup:
     targets: [claude-code, copilot]   # both, bodies tool-adapted
 
-  ticket:
+  my-command:
     targets: [copilot]                # copilot only
 ```
 
