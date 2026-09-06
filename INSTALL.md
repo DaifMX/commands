@@ -30,6 +30,7 @@ Don't assume — check:
 |---|---|
 | Claude Code | `~/.claude` directory exists, or the user mentions Claude Code |
 | GitHub Copilot / VS Code | VS Code is installed and/or `~/.config/Code` (Linux), `~/Library/Application Support/Code` (macOS), or `%APPDATA%\Code` (Windows) exists — use `Code - Insiders` instead of `Code` if that's the edition in use |
+| Codex | `codex` is on `PATH`, or `~/.codex` exists |
 
 If only one tool is present, that's fine — `config.yaml` lets you scope
 commands to just that tool's `targets`.
@@ -54,6 +55,7 @@ Then open `config.yaml` and adjust, if needed:
     copilot: ~/.config/Code/User/prompts   # macOS: ~/Library/Application Support/Code/User/prompts
                                             # Windows: %APPDATA%\Code\User\prompts
                                             # Insiders: replace Code with "Code - Insiders"
+  codex: ~/.codex/skills
   ```
   Fix the `copilot` path for the detected OS/edition from step 1.
 - **`commands: <name>: targets:`** — which tool(s) each command should be
@@ -80,6 +82,7 @@ This, in one pass:
 3. Rebuilds the install symlinks from step 2's `install:` paths:
    - Claude Code: one directory symlink, `~/.claude/commands -> $REPO/providers/claude-code`.
    - Copilot: one file symlink per command inside the prompts directory.
+   - Codex: one skill-directory symlink per command inside `~/.codex/skills`.
 
 If a real (non-symlink) directory or file already sits at an install path,
 the script will warn and skip it rather than overwrite — surface that to the
@@ -97,6 +100,7 @@ node "$REPO/scripts/sync.mjs" --prune     # also remove stale per-file Copilot s
 ```bash
 ls -la ~/.claude/commands          # expect an -> arrow to $REPO/providers/claude-code
 ls -la ~/.config/Code/User/prompts # (or the OS-appropriate path) expect *.prompt.md -> symlinks
+ls -la ~/.codex/skills             # expect command-skill -> symlinks, if Codex is installed
 ```
 
 Confirm at least one command file is visible through each symlink.
@@ -105,8 +109,12 @@ Confirm at least one command file is visible through each symlink.
 
 - Which tool(s) got linked, and to where.
 - That Claude Code picks up new commands immediately; VS Code/Copilot picks
-  them up on the next window reload.
+  them up on the next window reload; Codex exposes these skills through `/skills`
+  and explicit `$<name>` invocation.
 - That commands are authored once in `source/<NAME>.md` (provider-agnostic
   Markdown) — never hand-edit files under `providers/`, they're regenerated.
 - That `config.yaml` controls which command goes to which tool, and re-running
   `node scripts/sync.mjs` (or `/sync`, once installed) is always safe/idempotent.
+
+Codex skills are the supported equivalent of Claude command files. Each skill
+contains a `SKILL.md` and is available as `$<name>` after Codex discovers it.

@@ -33,9 +33,18 @@ If unsure, ask the user for the absolute path to their `commands` clone.
 
 ### 2. Run the sync engine
 Pass through any arguments the user gave (`--check`, `--prune`):
+<!-- only:claude-code,copilot -->
 ```bash
 node <repo>/scripts/sync.mjs {{ARGS}}
 ```
+<!-- /only -->
+<!-- only:codex -->
+```bash
+node <repo>/scripts/sync.mjs
+```
+If the user included flags after `$sync`, pass those flags to the command.
+Do not pass `$ARGUMENTS` literally.
+<!-- /only -->
 - No args → apply: render everything, prune stale generated files, relink,
   report what changed.
 - `--check` → dry run; report only (exits non-zero if anything is stale or

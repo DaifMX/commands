@@ -1,4 +1,4 @@
-Link this commands monorepo into place so every command in `providers/{{PROVIDER}}/` is available as a slash command.
+Link this commands monorepo into place so every command in `providers/{{PROVIDER}}/` is available in the target tool.
 
 ## Instructions
 
@@ -66,11 +66,50 @@ List the prompts directory and confirm each entry is an `->` symlink pointing
 into `$REPO/{{PROVIDER_DIR}}`.
 <!-- /only -->
 
+<!-- only:codex -->
+### 2. Locate the Codex skills directory
+
+Codex loads user-level skills from `~/.codex/skills`. Check it first:
+```
+ls -la ~/.codex/skills
+```
+
+If it does not exist, create it:
+```bash
+mkdir -p ~/.codex/skills
+```
+
+### 3. Link each skill directory
+For every skill directory in `$REPO/{{PROVIDER_DIR}}`, create a symlink with the
+same name in `~/.codex/skills`:
+```bash
+for f in "$REPO"/{{PROVIDER_DIR}}/*; do
+  [ -d "$f" ] || continue
+  name=$(basename "$f")
+  if [ -e "$HOME/.codex/skills/$name" ] && [ ! -L "$HOME/.codex/skills/$name" ]; then
+    echo "WARNING: $HOME/.codex/skills/$name exists and is not a symlink — skipping"
+    continue
+  fi
+  ln -sfn "$f" "$HOME/.codex/skills/$name"
+done
+```
+
+### 4. Verify
+```
+ls -la ~/.codex/skills
+```
+
+Confirm each skill is an `->` symlink pointing into `$REPO/{{PROVIDER_DIR}}` and
+contains a `SKILL.md`. Restart Codex if the skills do not appear. Invoke them
+by typing `$<name>` (for example, `$commit`) or select them from `/skills`.
+<!-- /only -->
+
 ### 5. Report
 Tell the user:
 - What got linked and where
 - That commands are edited in `$REPO/source/` (not under `providers/`), and
   `config.yaml` controls which tool(s) each command renders into
-- That running `/sync` (or `node $REPO/scripts/sync.mjs`) regenerates every
-  provider's commands from `source/` and rebuilds all symlinks — including this
-  one — so it's safe to re-run any time
+- That running `/sync` (or `$sync` in Codex, or
+  `node $REPO/scripts/sync.mjs`) regenerates every provider's commands from
+  `source/` and rebuilds all symlinks — including this one — so it's safe to
+  re-run any time

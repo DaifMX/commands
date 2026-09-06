@@ -4,7 +4,7 @@ description: "Link this commands monorepo into place so its commands are availab
 agent: "agent"
 ---
 
-Link this commands monorepo into place so every command in `providers/copilot/` is available as a slash command.
+Link this commands monorepo into place so every command in `providers/copilot/` is available in the target tool.
 
 ## Instructions
 
@@ -43,6 +43,7 @@ Tell the user:
 - What got linked and where
 - That commands are edited in `$REPO/source/` (not under `providers/`), and
   `config.yaml` controls which tool(s) each command renders into
-- That running `/sync` (or `node $REPO/scripts/sync.mjs`) regenerates every
-  provider's commands from `source/` and rebuilds all symlinks — including this
-  one — so it's safe to re-run any time
+- That running `/sync` (or `$sync` in Codex, or
+  `node $REPO/scripts/sync.mjs`) regenerates every provider's commands from
+  `source/` and rebuilds all symlinks — including this one — so it's safe to
+  re-run any time

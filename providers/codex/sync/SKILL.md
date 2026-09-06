@@ -1,6 +1,6 @@
 ---
+name: "sync"
 description: "Regenerate every provider's commands from source/ per config.yaml, and rebuild install symlinks."
-argument-hint: "[--check] [--prune]"
 ---
 
 # /sync — Regenerate provider commands from source
@@ -32,15 +32,18 @@ hand-edit files under `providers/`; edit `source/` instead and run `/sync`.
 ## Instructions
 
 ### 1. Locate the repo root
-This command lives in `<repo>/providers/claude-code/`. The repo root is the
+This command lives in `<repo>/providers/codex/`. The repo root is the
 directory that contains `config.yaml`, `source/`, `providers/`, and `scripts/`.
 If unsure, ask the user for the absolute path to their `commands` clone.
 
 ### 2. Run the sync engine
 Pass through any arguments the user gave (`--check`, `--prune`):
+
 ```bash
-node <repo>/scripts/sync.mjs $ARGUMENTS
+node <repo>/scripts/sync.mjs
 ```
+If the user included flags after `$sync`, pass those flags to the command.
+Do not pass `$ARGUMENTS` literally.
 
 - No args → apply: render everything, prune stale generated files, relink,
   report what changed.

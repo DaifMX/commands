@@ -32,6 +32,7 @@
 install:
   claude-code: ~/.claude/commands
   copilot: ~/.config/Code/User/prompts
+  codex: ~/.codex/skills
 
 # Add a new tool (OpenCode, etc.) here — no code changes needed, as long as it
 # can load commands from a symlinked directory or per-file symlinks and wants
@@ -51,17 +52,23 @@ providers:
     fixed:
       agent: agent
 
+  codex:
+    ext: "/SKILL.md"              # providers/codex/<name>/SKILL.md
+    install-mode: skill-dirs       # one symlink per skill directory
+    args-token: ""                 # skill invocations pass context after $name
+    frontmatter: [name, description]
+
 commands:
   commit:
-    targets: [claude-code, copilot]
+    targets: [claude-code, copilot, codex]
     description: "Commit staged and unstaged changes to the current branch using an Angular-style commit message that satisfies semantic-release conventions."
     argument-hint: "Optional: branch name or commit scope"
 
   sync:
-    targets: [claude-code, copilot]
+    targets: [claude-code, copilot, codex]
     description: "Regenerate every provider's commands from source/ per config.yaml, and rebuild install symlinks."
     argument-hint: "[--check] [--prune]"
 
   setup:
-    targets: [claude-code, copilot]
+    targets: [claude-code, copilot, codex]
     description: "Link this commands monorepo into place so its commands are available as slash commands."

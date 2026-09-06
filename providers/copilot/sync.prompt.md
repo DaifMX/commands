@@ -43,6 +43,7 @@ Pass through any arguments the user gave (`--check`, `--prune`):
 ```bash
 node <repo>/scripts/sync.mjs ${input:args}
 ```
+
 - No args → apply: render everything, prune stale generated files, relink,
   report what changed.
 - `--check` → dry run; report only (exits non-zero if anything is stale or

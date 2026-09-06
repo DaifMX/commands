@@ -3,7 +3,7 @@
 // install symlinks each tool reads its commands from.
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, rmSync, readlinkSync } from 'node:fs';
-import { dirname, join, resolve, basename } from 'node:path';
+import { dirname, join, resolve, basename, relative } from 'node:path';
 import { sourcePath, providerDir, providerPath, expand, isSymlink } from './paths.mjs';
 import { renderCommand } from './render.mjs';
 import { ensureDirSymlink, ensureFileSymlink } from './symlinks.mjs';
@@ -71,8 +71,9 @@ export function pruneStaleFiles(repo, { commands, providers }, apply) {
     const visible = cmdNames.filter(n => !isIgnored(commands, n));
     const ignored = cmdNames.filter(n => isIgnored(commands, n));
 
-    prunedCount += pruneDir(providerKey, dirTarget, provider.ext, visible.map(n => `${n}${provider.ext}`), apply);
-    prunedCount += pruneDir(providerKey, join(dirTarget, 'ignored'), provider.ext, ignored.map(n => `${n}${provider.ext}`), apply);
+    const prune = provider['install-mode'] === 'skill-dirs' ? pruneNestedDir : pruneDir;
+    prunedCount += prune(providerKey, dirTarget, provider.ext, visible.map(n => `${n}${provider.ext}`), apply);
+    prunedCount += prune(providerKey, join(dirTarget, 'ignored'), provider.ext, ignored.map(n => `${n}${provider.ext}`), apply);
   }
 
   if (!prunedCount) ok('no stale generated files');
@@ -97,10 +98,58 @@ function pruneDir(providerKey, dirTarget, ext, expectedNames, apply) {
   return count;
 }
 
+// Removes generated skill files whose command directory or SKILL.md no longer
+// corresponds to config.yaml. Skill providers render one directory per
+// command, so they need a recursive variant of pruneDir.
+function pruneNestedDir(providerKey, dirTarget, ext, expectedNames, apply) {
+  if (!existsSync(dirTarget)) return 0;
+  const expected = new Set(expectedNames);
+  let count = 0;
+
+  for (const entry of readdirSync(dirTarget)) {
+    const p = join(dirTarget, entry);
+    if (entry === 'ignored' && statSync(p).isDirectory()) continue;
+    if (statSync(p).isDirectory()) {
+      const expectedPath = `${entry}${ext}`;
+      if (!expected.has(expectedPath)) {
+        count++;
+        if (apply) { rmSync(p, { recursive: true }); warn(`${providerKey}: removed stale ${dim(entry)}/ (no longer in config.yaml)`); }
+        else warn(`${providerKey}: would remove stale ${entry}/ (no longer in config.yaml)`);
+        continue;
+      }
+      count += pruneSkillTree(providerKey, p, ext, entry, expected, apply);
+      if (apply && existsSync(p) && readdirSync(p).length === 0) rmSync(p);
+      continue;
+    }
+    count++;
+    if (apply) { rmSync(p); warn(`${providerKey}: removed stale ${dim(entry)} (no longer in config.yaml)`); }
+    else warn(`${providerKey}: would remove stale ${entry} (no longer in config.yaml)`);
+  }
+  return count;
+}
+
+function pruneSkillTree(providerKey, dirTarget, ext, relativeDir, expected, apply) {
+  let count = 0;
+  for (const entry of readdirSync(dirTarget)) {
+    const p = join(dirTarget, entry);
+    const rel = join(relativeDir, entry);
+    if (statSync(p).isDirectory()) {
+      count += pruneSkillTree(providerKey, p, ext, rel, expected, apply);
+      if (apply && existsSync(p) && readdirSync(p).length === 0) rmSync(p);
+    } else if (!expected.has(rel)) {
+      count++;
+      if (apply) { rmSync(p); warn(`${providerKey}: removed stale ${dim(rel)} (no longer in config.yaml)`); }
+      else warn(`${providerKey}: would remove stale ${rel} (no longer in config.yaml)`);
+    }
+  }
+  return count;
+}
+
 // Rebuild the symlinks each provider reads its commands from: either one
-// symlink for the whole providers/<name>/ directory (install-mode: dir), or
-// one symlink per command file (install-mode: files). With --prune, also
-// removes stale per-file install symlinks for commands no longer configured.
+// symlink for the whole providers/<name>/ directory (install-mode: dir), one
+// symlink per command file (install-mode: files), or one symlink per skill
+// directory (install-mode: skill-dirs). With --prune, also removes stale
+// per-file/per-skill install symlinks for commands no longer configured.
 export function rebuildSymlinks(repo, { commands, providers, install }, apply, prune) {
   for (const [providerKey, provider] of Object.entries(providers)) {
     const installTarget = install[providerKey];
@@ -112,6 +161,8 @@ export function rebuildSymlinks(repo, { commands, providers, install }, apply, p
       ensureDirSymlink(installTarget, dirTarget, apply);
     } else if (provider['install-mode'] === 'files') {
       linkPerFile(repo, providerKey, provider, dirTarget, commands, configuredCmds, expand(installTarget), apply, prune);
+    } else if (provider['install-mode'] === 'skill-dirs') {
+      linkSkillDirs(repo, providerKey, provider, dirTarget, commands, configuredCmds, expand(installTarget), apply, prune);
     } else {
       warn(`${providerKey}: unknown install-mode ${JSON.stringify(provider['install-mode'])} — skipping symlinks`);
     }
@@ -126,6 +177,7 @@ function linkPerFile(repo, providerKey, provider, dirTarget, commands, configure
     if (!existsSync(target)) continue;
     const linkName = `${name}${provider.ext}`;
     const linkPath = join(dest, linkName);
+    if (apply) mkdirSync(dirname(linkPath), { recursive: true });
     const r = ensureFileSymlink(linkPath, target, apply);
     if (r === 'linked' || r === 'repointed') ok(`link ${dim(linkName)} → ${dim(providerKey)} (${r})`);
     else if (r === 'ok') ok(`link ${dim(linkName)} (ok)`);
@@ -140,5 +192,41 @@ function linkPerFile(repo, providerKey, provider, dirTarget, commands, configure
     if (!isSymlink(p) || !resolve(dirname(p), readlinkSync(p)).startsWith(dirTarget)) continue;
     if (apply) { rmSync(p); warn(`pruned stale link ${entry}`); }
     else info(`would prune stale link ${entry}`);
+  }
+}
+
+function linkSkillDirs(repo, providerKey, provider, dirTarget, commands, configuredCmds, dest, apply, prune) {
+  if (configuredCmds.length && apply) mkdirSync(dest, { recursive: true });
+
+  for (const name of configuredCmds) {
+    const ignored = isIgnored(commands, name);
+    const targetFile = providerPath(repo, providerKey, provider, name, ignored);
+    if (!existsSync(targetFile)) continue;
+    const targetDir = dirname(targetFile);
+    const linkName = ignored ? join('ignored', name) : name;
+    const linkPath = join(dest, linkName);
+    if (apply) mkdirSync(dirname(linkPath), { recursive: true });
+    ensureDirSymlink(linkPath, targetDir, apply);
+  }
+
+  if (!prune || !existsSync(dest)) return;
+  const wanted = new Set(configuredCmds.map(name => isIgnored(commands, name) ? join('ignored', name) : name));
+  pruneSkillLinks(dest, dest, dirTarget, wanted, apply);
+}
+
+function pruneSkillLinks(root, current, dirTarget, wanted, apply) {
+  for (const entry of readdirSync(current)) {
+    const p = join(current, entry);
+    if (isSymlink(p)) {
+      const rel = relative(root, p);
+      const target = resolve(dirname(p), readlinkSync(p));
+      const inside = target === dirTarget || target.startsWith(`${dirTarget}/`);
+      if (inside && !wanted.has(rel)) {
+        if (apply) { rmSync(p); warn(`pruned stale skill link ${rel}`); }
+        else info(`would prune stale skill link ${rel}`);
+      }
+    } else if (statSync(p).isDirectory()) {
+      pruneSkillLinks(root, p, dirTarget, wanted, apply);
+    }
   }
 }
