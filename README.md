@@ -67,6 +67,7 @@ real, hand-editable command in that tool's own format.
 | Command | Claude | Copilot | Codex | What it does |
 |---|:---:|:---:|:---:|---|
 | [`/commit`](claude-code/commit.md) | ✅ | ✅ | ✅ | Stage & commit with an Angular / semantic-release message. Offers to push. |
+| [`/ramify`](claude-code/ramify.md) | ✅ | ✅ | ✅ | Build a described change in a new worktree + branch, commit it Angular-style, push, and open a PR. |
 | [`/sync`](claude-code/sync.md) | ✅ | ✅ | ✅ | Reconcile command sets per `config.yaml` and rebuild symlinks. |
 | [`/setup`](claude-code/setup.md) | ✅ | ✅ | ✅ | Link this repo's commands into the tool. |
 

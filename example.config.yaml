@@ -64,6 +64,11 @@ commands:
     description: "Commit staged and unstaged changes to the current branch using an Angular-style commit message that satisfies semantic-release conventions."
     argument-hint: "Optional: branch name or commit scope"
 
+  ramify:
+    targets: [claude-code, copilot, codex]
+    description: "Implement a described change in a new git worktree and branch, commit it Angular-style, push, and open a PR against the default branch."
+    argument-hint: "<description of the change> [--base <branch>] [--branch <name>] [--draft]"
+
   sync:
     targets: [claude-code, copilot, codex]
     description: "Regenerate every provider's commands from source/ per config.yaml, and rebuild install symlinks."
