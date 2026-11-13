@@ -68,6 +68,7 @@ real, hand-editable command in that tool's own format.
 |---|:---:|:---:|:---:|---|
 | [`/commit`](claude-code/commit.md) | ✅ | ✅ | ✅ | Stage & commit with an Angular / semantic-release message. Offers to push. |
 | [`/ramify`](claude-code/ramify.md) | ✅ | ✅ | ✅ | Build a described change in a new worktree + branch, commit it Angular-style, push, and open a PR. |
+| [`/digest`](providers/claude-code/digest.md) | ✅ | ✅ | ✅ | Turn a commit, range, branch, PR, or WIP into a self-contained HTML explainer: concepts, diagrams, annotated snippets, impact. |
 | [`/sync`](claude-code/sync.md) | ✅ | ✅ | ✅ | Reconcile command sets per `config.yaml` and rebuild symlinks. |
 | [`/setup`](claude-code/setup.md) | ✅ | ✅ | ✅ | Link this repo's commands into the tool. |
 

@@ -77,3 +77,8 @@ commands:
   setup:
     targets: [claude-code, copilot, codex]
     description: "Link this commands monorepo into place so its commands are available as slash commands."
+
+  digest:
+    targets: [claude-code, copilot, codex]
+    description: "Generate a self-contained HTML explainer for a commit, range, branch, PR, or uncommitted work: concepts, diagrams, annotated code, and impact."
+    argument-hint: "[<ref> | <a>..<b> | --branch [name] | --pr <n> | --wip] [--brief] [--out <path>] [--no-open] [focus/audience]"
